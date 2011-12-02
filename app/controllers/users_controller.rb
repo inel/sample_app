@@ -47,17 +47,23 @@ class UsersController < ApplicationController
     redirect_to users_path
   end
   def following
-    @title = "Following"
-    @user = User.find(params[:id])
-    @users = @user.following.paginate(:page => params[:page])
-    render 'show_follow'
+    if signed_in?
+      @title = "Following"
+      @user = User.find(params[:id])
+      @users = @user.following.paginate(:page => params[:page])
+      render 'show_follow'
+    else redirect_to(signin_path)
+    end
   end
 
   def followers
-    @title = "Followers"
-    @user = User.find(params[:id])
-    @users = @user.followers.paginate(:page => params[:page])
-    render 'show_follow'
+    if signed_in?
+      @title = "Followers"
+      @user = User.find(params[:id])
+      @users = @user.followers.paginate(:page => params[:page])
+      render 'show_follow'
+    else redirect_to(signin_path)
+    end
   end
 
   private
