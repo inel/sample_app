@@ -36,8 +36,7 @@ class User < ActiveRecord::Base
                                    :dependent => :destroy
 
   def feed
-    # This is preliminary. See Глава 12 for the full implementation.
-    Micropost.where("user_id = ?", id)
+    Micropost.from_users_followed_by(self)
   end
   def has_password?(submitted_password)
     encrypted_password == encrypt(submitted_password)
