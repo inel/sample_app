@@ -8,7 +8,7 @@
 #  created_at         :datetime
 #  updated_at         :datetime
 #  encrypted_password :string(255)
-#
+
 require 'digest'
 class User < ActiveRecord::Base
   attr_accessor :password
@@ -27,14 +27,18 @@ class User < ActiveRecord::Base
   before_save :encrypt_password
   
   has_many :microposts, :dependent => :destroy
+  has_many :relationships, :foreign_key => "follower_id",
+                           :dependent => :destroy
+  has_many :following, :through => :relationships, :source => :followed
+  has_many :followers, :through => :reverse_relationships, :source => :follower
+  has_many :reverse_relationships, :foreign_key => "followed_id",
+                                   :class_name => "Relationship",
+                                   :dependent => :destroy
+
   def feed
     # This is preliminary. See Глава 12 for the full implementation.
     Micropost.where("user_id = ?", id)
   end
-  def has_password?(submitted_password)
-    encrypted_password == encrypt(submitted_password)
-  end
-
   def has_password?(submitted_password)
     encrypted_password == encrypt(submitted_password)
   end
@@ -49,14 +53,23 @@ class User < ActiveRecord::Base
     user = find_by_id(id)
     (user && user.salt == cookie_salt) ? user : nil
   end
+  def following?(followed)
+    relationships.find_by_followed_id(followed)
+  end
 
+  def follow!(followed)
+    relationships.create!(:followed_id => followed.id)
+  end
+  def unfollow!(followed)
+    relationships.find_by_followed_id(followed).destroy
+  end
 #zadanie----------
   def User.authenticate(email, submitted_password)
     user = find_by_email(email)
     return nil  if user.nil?
     return user if user.has_password?(submitted_password)
   end
-   def self.authenticate(email, submitted_password)
+  def self.authenticate(email, submitted_password)
     user = find_by_email(email)
     return nil  if user.nil?
     return user if user.has_password?(submitted_password)
@@ -68,7 +81,7 @@ class User < ActiveRecord::Base
       nil
     elsif user.has_password?(submitted_password)
       user
-    else
+   else
       nil
     end
   end
